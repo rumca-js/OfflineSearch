@@ -1,4 +1,7 @@
-A fast, lightweight Android application for searching a curated collection of popular websites and domains.
+A fast, lightweight Android application for searching a curated collection of:
+ - popular websites and domains
+ - YouTube channels
+ - X channels
 
  - Instant search across a large collection of well-known domains
  - Simple and lightweight interface
