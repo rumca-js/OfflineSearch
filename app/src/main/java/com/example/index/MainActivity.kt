@@ -24,7 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.index.ui.screens.AboutScreen
 import com.example.index.ui.screens.HomeScreen
 import com.example.index.ui.screens.OptionsScreen
-import com.example.index.ui.theme.IndexTheme
+import com.example.index.ui.theme.OfflineWebSearchTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.index.ui.SearchViewModel
 
@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val searchViewModel: SearchViewModel = viewModel()
-            IndexTheme {
+            OfflineWebSearchTheme {
                 val navController = rememberNavController()
                 val items = listOf(
                     Screen.Home,

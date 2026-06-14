@@ -52,7 +52,7 @@ fun AboutScreen() {
         
         SectionTitle("Why Use Offline Web Search?")
         Text(
-            text = "Finding a website can be faster than opening a browser and typing a full URL. Bookmark Search provides a searchable index of popular domains directly on your device.",
+            text = "Finding a website can be faster than opening a browser and typing a full URL. Offline Web Search provides a searchable index of popular domains directly on your device.",
             style = MaterialTheme.typography.bodyMedium
         )
         

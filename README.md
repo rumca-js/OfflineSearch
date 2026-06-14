@@ -12,7 +12,7 @@ A fast, lightweight Android application for searching a curated collection of:
 
 # Why Use Offline Web Search?
 
-Finding a website can be faster than opening a browser and typing a full URL. Bookmark Search provides a searchable index of popular domains directly on your device.
+Finding a website can be faster than opening a browser and typing a full URL. Offline Web Search provides a searchable index of popular domains directly on your device.
 
 # Permissions
 

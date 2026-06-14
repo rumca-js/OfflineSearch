@@ -71,7 +71,10 @@ fun HomeScreen(
     ) {
         TextField(
             value = searchQuery,
-            onValueChange = { viewModel.searchQuery = it },
+            onValueChange = { 
+                viewModel.searchQuery = it
+                viewModel.showSuggestions = true
+            },
             label = { Text("Search Places") },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Type at least 2 characters...") },

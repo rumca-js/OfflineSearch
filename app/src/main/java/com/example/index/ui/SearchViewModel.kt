@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 
 class SearchViewModel : ViewModel() {
     var searchQuery by mutableStateOf("")
+    var showSuggestions by mutableStateOf(false)
     var activeSearchQuery by mutableStateOf("")
     var searchHistory by mutableStateOf<List<String>>(emptyList())
     var allPlaces by mutableStateOf<List<Place>>(emptyList())
@@ -35,6 +36,7 @@ class SearchViewModel : ViewModel() {
     }
 
     fun performSearch() {
+        showSuggestions = false
         if (searchQuery.isNotBlank()) {
             activeSearchQuery = searchQuery
             val currentHistory = searchHistory.toMutableList()
@@ -49,7 +51,7 @@ class SearchViewModel : ViewModel() {
     }
 
     val suggestions by derivedStateOf {
-        if (searchQuery.isEmpty()) {
+        if (!showSuggestions || searchQuery.isEmpty()) {
             emptyList()
         } else {
             searchHistory.filter { it.contains(searchQuery, ignoreCase = true) }
