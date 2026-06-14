@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Index"
+rootProject.name = "Offline Web Search"
 include(":app")

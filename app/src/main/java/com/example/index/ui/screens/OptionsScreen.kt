@@ -10,11 +10,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.index.data.AppConfigManager
 
 @Composable
 fun OptionsScreen() {
-    var directLinks by remember { mutableStateOf(false) }
-    var showIcons by remember { mutableStateOf(false) }
+    val config by AppConfigManager.config.collectAsState()
 
     Column(
         modifier = Modifier
@@ -26,14 +26,14 @@ fun OptionsScreen() {
 
         OptionItem(
             label = "Direct links",
-            checked = directLinks,
-            onCheckedChange = { directLinks = it }
+            checked = config.directLinks,
+            onCheckedChange = { AppConfigManager.setDirectLinks(it) }
         )
 
         OptionItem(
             label = "Show icons",
-            checked = showIcons,
-            onCheckedChange = { showIcons = it }
+            checked = config.showIcons,
+            onCheckedChange = { AppConfigManager.setShowIcons(it) }
         )
     }
 }

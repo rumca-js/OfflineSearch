@@ -25,11 +25,14 @@ import com.example.index.ui.screens.AboutScreen
 import com.example.index.ui.screens.HomeScreen
 import com.example.index.ui.screens.OptionsScreen
 import com.example.index.ui.theme.IndexTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.index.ui.SearchViewModel
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Filled.Home)
     object About : Screen("about", "About", Icons.Filled.Info)
     object Options : Screen("options", "Options", Icons.Filled.Settings)
+    object Detail : Screen("detail", "Detail", Icons.Filled.Search)
 }
 
 class MainActivity : ComponentActivity() {
@@ -37,6 +40,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val searchViewModel: SearchViewModel = viewModel()
             IndexTheme {
                 val navController = rememberNavController()
                 val items = listOf(
@@ -74,9 +78,25 @@ class MainActivity : ComponentActivity() {
                         startDestination = Screen.Home.route,
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        composable(Screen.Home.route) { HomeScreen() }
+                        composable(Screen.Home.route) { 
+                            HomeScreen(
+                                viewModel = searchViewModel,
+                                onNavigateToDetail = { place ->
+                                    searchViewModel.selectedPlace = place
+                                    navController.navigate(Screen.Detail.route)
+                                }
+                            )
+                        }
                         composable(Screen.About.route) { AboutScreen() }
                         composable(Screen.Options.route) { OptionsScreen() }
+                        composable(Screen.Detail.route) {
+                            searchViewModel.selectedPlace?.let { place ->
+                                com.example.index.ui.screens.EntryDetailScreen(
+                                    place = place,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                        }
                     }
                 }
             }

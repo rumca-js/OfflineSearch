@@ -13,6 +13,13 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.index.data.AppConfigManager
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Link
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.index.ui.SearchViewModel
+import coil.compose.AsyncImage
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +31,11 @@ data class Place(
     val description: String? = null,
     val link: String? = null,
     val tags: List<String>? = null,
-    val page_rating_votes: Int? = 0
+    val page_rating_votes: Int? = 0,
+    val page_rating: Int? = 0,
+    val thumbnail: String? = null,
+    val date_created: String? = null,
+    val date_published: String? = null
 )
 
 private val jsonConfig = Json { 
@@ -34,27 +45,20 @@ private val jsonConfig = Json {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    viewModel: SearchViewModel = viewModel(),
+    onNavigateToDetail: (Place) -> Unit = {}
+) {
     val context = LocalContext.current
-    var searchQuery by remember { mutableStateOf("") }
-    var allPlaces by remember { mutableStateOf<List<Place>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
 
     // Load data once
     LaunchedEffect(Unit) {
-        allPlaces = loadPlacesFromAssets(context).sortedByDescending { it.page_rating_votes ?: 0 }
-        isLoading = false
+        viewModel.loadDataIfNeeded(context)
     }
 
-    val filteredData = if (searchQuery.length < 2) {
-        emptyList()
-    } else {
-        allPlaces.filter { place ->
-            place.title?.contains(searchQuery, ignoreCase = true) == true ||
-            place.description?.contains(searchQuery, ignoreCase = true) == true ||
-            place.tags?.any { it.contains(searchQuery, ignoreCase = true) } == true
-        }.take(50) // Limit results for performance
-    }
+    val searchQuery = viewModel.searchQuery
+    val isLoading = viewModel.isLoading
+    val filteredData = viewModel.filteredData
 
     Column(
         modifier = Modifier
@@ -63,10 +67,20 @@ fun HomeScreen() {
     ) {
         TextField(
             value = searchQuery,
-            onValueChange = { searchQuery = it },
+            onValueChange = { viewModel.searchQuery = it },
             label = { Text("Search Places") },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Type at least 2 characters...") }
+            placeholder = { Text("Type at least 2 characters...") },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { viewModel.searchQuery = "" }) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Clear search"
+                        )
+                    }
+                }
+            }
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -78,7 +92,7 @@ fun HomeScreen() {
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(filteredData) { place ->
-                    PlaceItem(place)
+                    PlaceItem(place, onNavigateToDetail)
                 }
                 if (searchQuery.length >= 2 && filteredData.isEmpty()) {
                     item {
@@ -92,14 +106,20 @@ fun HomeScreen() {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PlaceItem(place: Place) {
+fun PlaceItem(place: Place, onClick: (Place) -> Unit) {
     val uriHandler = LocalUriHandler.current
+    val config by AppConfigManager.config.collectAsState()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable(enabled = place.link != null) {
-                place.link?.let { uriHandler.openUri(it) }
+            .clickable(enabled = place.link != null || !config.directLinks) {
+                if (config.directLinks) {
+                    place.link?.let { uriHandler.openUri(it) }
+                } else {
+                    onClick(place)
+                }
             },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -109,12 +129,36 @@ fun PlaceItem(place: Place) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
-                Text(
-                    text = place.title ?: "No Title",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    if (config.showIcons) {
+                        if (place.thumbnail != null) {
+                            AsyncImage(
+                                model = place.thumbnail,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .padding(end = 8.dp)
+                            )
+                        } else if (place.link != null) {
+                            Icon(
+                                imageVector = Icons.Default.Link,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .padding(end = 8.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Text(
+                        text = place.title ?: "No Title",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
                 place.page_rating_votes?.let { votes ->
                     Surface(
                         color = MaterialTheme.colorScheme.secondaryContainer,
