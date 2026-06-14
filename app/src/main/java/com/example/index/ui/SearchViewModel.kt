@@ -13,6 +13,8 @@ import kotlinx.coroutines.launch
 
 class SearchViewModel : ViewModel() {
     var searchQuery by mutableStateOf("")
+    var activeSearchQuery by mutableStateOf("")
+    var searchHistory by mutableStateOf<List<String>>(emptyList())
     var allPlaces by mutableStateOf<List<Place>>(emptyList())
     var isLoading by mutableStateOf(true)
         private set
@@ -32,14 +34,37 @@ class SearchViewModel : ViewModel() {
         }
     }
 
+    fun performSearch() {
+        if (searchQuery.isNotBlank()) {
+            activeSearchQuery = searchQuery
+            val currentHistory = searchHistory.toMutableList()
+            currentHistory.remove(searchQuery)
+            currentHistory.add(0, searchQuery)
+            if (currentHistory.size > 100) {
+                searchHistory = currentHistory.take(100)
+            } else {
+                searchHistory = currentHistory
+            }
+        }
+    }
+
+    val suggestions by derivedStateOf {
+        if (searchQuery.isEmpty()) {
+            emptyList()
+        } else {
+            searchHistory.filter { it.contains(searchQuery, ignoreCase = true) }
+        }
+    }
+
     val filteredData by derivedStateOf {
-        if (searchQuery.length < 2) {
+        if (activeSearchQuery.length < 2) {
             emptyList()
         } else {
             allPlaces.filter { place ->
-                place.title?.contains(searchQuery, ignoreCase = true) == true ||
-                place.description?.contains(searchQuery, ignoreCase = true) == true ||
-                place.tags?.any { it.contains(searchQuery, ignoreCase = true) } == true
+                place.title?.contains(activeSearchQuery, ignoreCase = true) == true ||
+                place.description?.contains(activeSearchQuery, ignoreCase = true) == true ||
+                place.link?.contains(activeSearchQuery, ignoreCase = true) == true ||
+                place.tags?.any { it.contains(activeSearchQuery, ignoreCase = true) } == true
             }.take(50)
         }
     }

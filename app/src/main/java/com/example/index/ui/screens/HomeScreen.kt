@@ -14,8 +14,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.index.data.AppConfigManager
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Link
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.index.ui.SearchViewModel
@@ -73,30 +77,83 @@ fun HomeScreen(
             placeholder = { Text("Type at least 2 characters...") },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { viewModel.searchQuery = "" }) {
+                    IconButton(onClick = { 
+                        viewModel.searchQuery = "" 
+                        viewModel.activeSearchQuery = ""
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Clear,
                             contentDescription = "Clear search"
                         )
                     }
                 }
-            }
+            },
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Search
+            ),
+            keyboardActions = KeyboardActions(
+                onSearch = { viewModel.performSearch() }
+            )
         )
+
+        val suggestions = viewModel.suggestions
+        if (suggestions.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column {
+                    suggestions.take(5).forEach { suggestion ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.searchQuery = suggestion
+                                    viewModel.performSearch()
+                                }
+                                .padding(12.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(text = suggestion)
+                        }
+                    }
+                }
+            }
+        }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Button(
+            onClick = { viewModel.performSearch() },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = searchQuery.length >= 2
+        ) {
+            Text("Search")
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
         
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                 CircularProgressIndicator()
             }
         } else {
+            val activeSearchQuery = viewModel.activeSearchQuery
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(filteredData) { place ->
                     PlaceItem(place, onNavigateToDetail)
                 }
-                if (searchQuery.length >= 2 && filteredData.isEmpty()) {
+                if (activeSearchQuery.length >= 2 && filteredData.isEmpty()) {
                     item {
-                        Text("No results found for \"$searchQuery\"")
+                        Text("No results found for \"$activeSearchQuery\"")
                     }
                 }
             }
