@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.index.data.AppConfigManager
+import com.example.index.data.ViewStyle
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
@@ -28,6 +29,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
+
+import android.database.sqlite.SQLiteDatabase
 
 @Serializable
 data class Place(
@@ -137,7 +141,7 @@ fun HomeScreen(
         Button(
             onClick = { viewModel.performSearch() },
             modifier = Modifier.fillMaxWidth(),
-            enabled = searchQuery.length >= 2
+            enabled = viewModel.isSearchButtonEnabled
         ) {
             Text("Search")
         }
@@ -154,7 +158,7 @@ fun HomeScreen(
                 items(filteredData) { place ->
                     PlaceItem(place, onNavigateToDetail)
                 }
-                if (activeSearchQuery.length >= 2 && filteredData.isEmpty()) {
+                if (activeSearchQuery.isNotEmpty() && filteredData.isEmpty()) {
                     item {
                         Text("No results found for \"$activeSearchQuery\"")
                     }
@@ -183,93 +187,109 @@ fun PlaceItem(place: Place, onClick: (Place) -> Unit) {
             },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-            ) {
+        Column {
+            if (config.viewStyle == ViewStyle.GALLERY && config.showIcons && place.thumbnail != null) {
+                AsyncImage(
+                    model = place.thumbnail,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp), // Set a fixed height or use contentScale
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+            }
+
+            Column(modifier = Modifier.padding(12.dp)) {
                 Row(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
-                    if (config.showIcons) {
-                        if (place.thumbnail != null) {
-                            AsyncImage(
-                                model = place.thumbnail,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .padding(end = 8.dp)
-                            )
-                        } else if (place.link != null) {
-                            Icon(
-                                imageVector = Icons.Default.Link,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .padding(end = 8.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        if (config.showIcons && (config.viewStyle != ViewStyle.GALLERY || place.thumbnail == null)) {
+                            if (place.thumbnail != null) {
+                                AsyncImage(
+                                    model = place.thumbnail,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(end = 8.dp)
+                                )
+                            } else if (place.link != null) {
+                                Icon(
+                                    imageVector = Icons.Default.Link,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(end = 8.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Text(
+                            text = place.title ?: "No Title",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
+                    place.page_rating_votes?.let { votes ->
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        ) {
+                            Text(
+                                text = "⭐ $votes",
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
                     }
+                }
+                place.description?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = place.title ?: "No Title",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        text = it,
+                        fontSize = 14.sp,
+                        maxLines = if (config.viewStyle == ViewStyle.RSS) 2 else 3,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
-                place.page_rating_votes?.let { votes ->
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = androidx.compose.foundation.shape.CircleShape
-                    ) {
+                
+                if (config.viewStyle != ViewStyle.RSS) {
+                    place.link?.let {
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "⭐ $votes",
+                            text = it,
                             fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
-            }
-            place.description?.let {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = it,
-                    fontSize = 14.sp,
-                    maxLines = 3,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-            }
-            place.link?.let {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = it,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            
-            place.tags?.let { tags ->
-                if (tags.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        tags.forEach { tag ->
-                            Surface(
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
-                            ) {
-                                Text(
-                                    text = tag,
-                                    fontSize = 10.sp,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                                )
+                
+                place.tags?.let { tags ->
+                    if (tags.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            tags.forEach { tag ->
+                                Surface(
+                                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        text = tag,
+                                        fontSize = 10.sp,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
                             }
                         }
                     }
@@ -279,7 +299,7 @@ fun PlaceItem(place: Place, onClick: (Place) -> Unit) {
     }
 }
 
-suspend fun loadPlacesFromAssets(context: Context): List<Place> = withContext(Dispatchers.IO) {
+suspend fun loadAllPlaces(context: Context, activeDatabaseUrl: String? = null): List<Place> = withContext(Dispatchers.IO) {
     val assets = listOf("places_0.json",
         "places_1.json",
         "places_2.json",
@@ -294,16 +314,64 @@ suspend fun loadPlacesFromAssets(context: Context): List<Place> = withContext(Di
         )
     val allPlaces = mutableListOf<Place>()
     
-    assets.forEach { fileName ->
-        try {
-            context.assets.open(fileName).bufferedReader().use { reader ->
-                val jsonString = reader.readText()
-                val places: List<Place> = jsonConfig.decodeFromString(jsonString)
-                allPlaces.addAll(places)
+    if (activeDatabaseUrl == null) {
+        // Load from assets if no external database is active
+        assets.forEach { fileName ->
+            try {
+                context.assets.open(fileName).bufferedReader().use { reader ->
+                    val jsonString = reader.readText()
+                    val places: List<Place> = jsonConfig.decodeFromString(jsonString)
+                    allPlaces.addAll(places)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        }
+    } else {
+        // Load ONLY the active database from local storage
+        val isSqlite = activeDatabaseUrl.endsWith(".db")
+        val extension = if (isSqlite) ".db" else ".json"
+        val fileName = "db_${activeDatabaseUrl.hashCode()}$extension"
+        val file = File(context.filesDir, fileName)
+        if (file.exists()) {
+            if (isSqlite) {
+                try {
+                    val db = SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+                    val cursor = db.rawQuery("SELECT title, description, thumbnail, link, page_rating_votes FROM linkdatamodel", null)
+                    cursor.use {
+                        while (it.moveToNext()) {
+                            val title = it.getString(it.getColumnIndexOrThrow("title"))
+                            val description = it.getString(it.getColumnIndexOrThrow("description"))
+                            val thumbnail = it.getString(it.getColumnIndexOrThrow("thumbnail"))
+                            val link = it.getString(it.getColumnIndexOrThrow("link"))
+                            val votes = it.getInt(it.getColumnIndexOrThrow("page_rating_votes"))
+                            allPlaces.add(Place(
+                                title = title,
+                                description = description,
+                                thumbnail = thumbnail,
+                                link = link,
+                                page_rating_votes = votes
+                            ))
+                        }
+                    }
+                    db.close()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            } else {
+                try {
+                    file.bufferedReader().use { reader ->
+                        val jsonString = reader.readText()
+                        val places: List<Place> = jsonConfig.decodeFromString(jsonString)
+                        allPlaces.addAll(places)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
+
     allPlaces
 }
+

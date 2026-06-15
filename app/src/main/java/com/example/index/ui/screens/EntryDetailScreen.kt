@@ -1,5 +1,6 @@
 package com.example.index.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -12,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -56,7 +58,14 @@ fun EntryDetailScreen(place: Place, onBack: () -> Unit) {
                 text = place.title ?: "No Title",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                lineHeight = 30.sp
+                lineHeight = 30.sp,
+                color = if (place.link != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                textDecoration = if (place.link != null) TextDecoration.Underline else TextDecoration.None,
+                modifier = if (place.link != null) {
+                    Modifier.clickable { uriHandler.openUri(place.link) }
+                } else {
+                    Modifier
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -67,28 +76,6 @@ fun EntryDetailScreen(place: Place, onBack: () -> Unit) {
                     fontSize = 16.sp,
                     lineHeight = 24.sp
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            if (place.link != null) {
-                Text(
-                    text = "Link:",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = place.link,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = androidx.compose.ui.Modifier.padding(vertical = 4.dp)
-                )
-                Button(
-                    onClick = { uriHandler.openUri(place.link) },
-                    modifier = Modifier.padding(vertical = 8.dp)
-                ) {
-                    Icon(Icons.Default.Link, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Open in Browser")
-                }
                 Spacer(modifier = Modifier.height(16.dp))
             }
 

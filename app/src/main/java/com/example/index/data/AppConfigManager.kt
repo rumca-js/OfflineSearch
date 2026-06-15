@@ -24,4 +24,40 @@ object AppConfigManager {
     fun setShowIcons(enabled: Boolean) {
         updateConfig { it.copy(showIcons = enabled) }
     }
+
+    fun setOrderBy(orderBy: OrderBy) {
+        updateConfig { it.copy(orderBy = orderBy) }
+    }
+
+    fun setViewStyle(viewStyle: ViewStyle) {
+        updateConfig { it.copy(viewStyle = viewStyle) }
+    }
+
+    fun addDatabase(url: String) {
+        updateConfig { it.copy(databases = it.databases + url) }
+    }
+
+    fun removeDatabase(url: String) {
+        updateConfig {
+            val newDatabases = it.databases - url
+            it.copy(
+                databases = newDatabases,
+                activeDatabase = if (it.activeDatabase == url) null else it.activeDatabase
+            )
+        }
+    }
+
+    fun updateDatabase(oldUrl: String, newUrl: String) {
+        updateConfig {
+            val newDatabases = it.databases.map { url -> if (url == oldUrl) newUrl else url }
+            it.copy(
+                databases = newDatabases,
+                activeDatabase = if (it.activeDatabase == oldUrl) newUrl else it.activeDatabase
+            )
+        }
+    }
+
+    fun setActiveDatabase(url: String?) {
+        updateConfig { it.copy(activeDatabase = url) }
+    }
 }

@@ -8,7 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.index.ui.screens.Place
-import com.example.index.ui.screens.loadPlacesFromAssets
+import com.example.index.ui.screens.loadAllPlaces
 import kotlinx.coroutines.launch
 
 class SearchViewModel : ViewModel() {
@@ -22,23 +22,37 @@ class SearchViewModel : ViewModel() {
 
     var selectedPlace by mutableStateOf<Place?>(null)
 
-    private var hasLoadedData = false
+    val isSearchButtonEnabled by derivedStateOf {
+        searchQuery != activeSearchQuery
+    }
+
+    private var currentActiveDatabase: String? = null
+    private var currentOrderBy: com.example.index.data.OrderBy? = null
 
     fun loadDataIfNeeded(context: Context) {
-        if (hasLoadedData) return
-        
         viewModelScope.launch {
-            isLoading = true
-            allPlaces = loadPlacesFromAssets(context).sortedByDescending { it.page_rating_votes ?: 0 }
-            isLoading = false
-            hasLoadedData = true
+            com.example.index.data.AppConfigManager.config.collect { config ->
+                if (config.activeDatabase != currentActiveDatabase || config.orderBy != currentOrderBy || allPlaces.isEmpty()) {
+                    currentActiveDatabase = config.activeDatabase
+                    currentOrderBy = config.orderBy
+                    isLoading = true
+                    val unsortedPlaces = loadAllPlaces(context, config.activeDatabase)
+                    allPlaces = when (config.orderBy) {
+                        com.example.index.data.OrderBy.PAGE_RATING_VOTES -> unsortedPlaces.sortedByDescending { it.page_rating_votes ?: 0 }
+                        com.example.index.data.OrderBy.DATE_CREATED -> unsortedPlaces.sortedByDescending { it.date_created ?: "" }
+                        com.example.index.data.OrderBy.DATE_PUBLISHED -> unsortedPlaces.sortedByDescending { it.date_published ?: "" }
+                    }
+                    isLoading = false
+                    performSearch() // Refresh filtered data
+                }
+            }
         }
     }
 
     fun performSearch() {
         showSuggestions = false
+        activeSearchQuery = searchQuery
         if (searchQuery.isNotBlank()) {
-            activeSearchQuery = searchQuery
             val currentHistory = searchHistory.toMutableList()
             currentHistory.remove(searchQuery)
             currentHistory.add(0, searchQuery)
@@ -59,8 +73,8 @@ class SearchViewModel : ViewModel() {
     }
 
     val filteredData by derivedStateOf {
-        if (activeSearchQuery.length < 2) {
-            emptyList()
+        if (activeSearchQuery.isBlank()) {
+            allPlaces.take(50)
         } else {
             allPlaces.filter { place ->
                 place.title?.contains(activeSearchQuery, ignoreCase = true) == true ||
