@@ -282,7 +282,7 @@ fun OptionsScreen() {
                             urlInput = it
                             verificationError = null
                         },
-                        label = { Text("Database URL or Local File") },
+                        label = { Text("Web URL") },
                         modifier = Modifier.fillMaxWidth(),
                         isError = verificationError != null,
                         supportingText = verificationError?.let { { Text(it) } },
@@ -296,7 +296,7 @@ fun OptionsScreen() {
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isVerifying
                     ) {
-                        Text("Pick JSON File")
+                        Text("Pick local file")
                     }
 
                     if (isVerifying) {

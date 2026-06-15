@@ -79,9 +79,9 @@ fun HomeScreen(
                 viewModel.searchQuery = it
                 viewModel.showSuggestions = true
             },
-            label = { Text("Search Places") },
+            label = { Text("Search") },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Type at least 2 characters...") },
+            placeholder = { Text("Input search text...") },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { 

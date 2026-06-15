@@ -29,7 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.index.ui.SearchViewModel
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    object Home : Screen("home", "Home", Icons.Filled.Home)
+    object Home : Screen("home", "Browse", Icons.Filled.Home)
     object About : Screen("about", "About", Icons.Filled.Info)
     object Options : Screen("options", "Options", Icons.Filled.Settings)
     object Detail : Screen("detail", "Detail", Icons.Filled.Search)
