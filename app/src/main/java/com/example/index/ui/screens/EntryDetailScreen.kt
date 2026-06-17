@@ -169,6 +169,7 @@ fun EntryDetailScreen(entry: Entry, onBack: () -> Unit) {
 
             DetailRow(label = "Created", value = EntryUtils.getFormattedDate(entry.date_created))
             DetailRow(label = "Dead", value = EntryUtils.getFormattedDate(entry.date_dead_since))
+            DetailRow(label = "Bookmarked", value = if (entry.bookmarked == true) "Yes" else "No")
 
             DetailRow(label = "Author", value = entry.author ?: "NA")
             DetailRow(label = "Album", value = entry.album ?: "NA")

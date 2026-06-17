@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -186,11 +187,13 @@ fun BrowseScreen(
 fun EntryItem(entry: Entry, onClick: (Entry) -> Unit) {
     val uriHandler = LocalUriHandler.current
     val config by AppConfigManager.config.collectAsState()
+    val isDead = !entry.date_dead_since.isNullOrBlank()
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .alpha(if (isDead) 0.5f else 1f)
             .clickable(enabled = entry.link != null || !config.directLinks) {
                 if (config.directLinks) {
                     entry.link?.let { uriHandler.openUri(it) }
@@ -250,17 +253,33 @@ fun EntryItem(entry: Entry, onClick: (Entry) -> Unit) {
                             fontSize = 16.sp
                         )
                     }
-                    entry.page_rating_votes?.let { votes ->
-                        Surface(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = androidx.compose.foundation.shape.CircleShape
-                        ) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        if (entry.bookmarked == true) {
                             Text(
-                                text = "⭐ $votes",
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                text = "📌",
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(end = 4.dp)
                             )
+                        }
+                        if (isDead) {
+                            Text(
+                                text = "💀",
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(end = 4.dp)
+                            )
+                        }
+                        entry.page_rating_votes?.let { votes ->
+                            Surface(
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = androidx.compose.foundation.shape.CircleShape
+                            ) {
+                                Text(
+                                    text = "⭐ $votes",
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
                         }
                     }
                 }

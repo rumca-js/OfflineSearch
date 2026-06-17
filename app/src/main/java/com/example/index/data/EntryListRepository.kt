@@ -25,7 +25,8 @@ data class Entry(
     val date_dead_since: String? = null,
     val age: Int? = 0,
     val status_code: Int? = 0,
-    val manual_status_code: Int? = 0
+    val manual_status_code: Int? = 0,
+    val bookmarked: Boolean? = false
 )
 
 private val jsonConfig = Json {
@@ -77,7 +78,7 @@ object EntryListRepository {
                         val cursor = db.rawQuery("""
                             SELECT 
                                 l.title, l.description, l.thumbnail, l.link, l.page_rating_votes, l.page_rating, l.date_created, l.date_published, l.date_dead_since,
-                                l.age, l.author, l.album, l.language, l.status_code, l.manual_status_code,
+                                l.age, l.author, l.album, l.language, l.status_code, l.manual_status_code, l.bookmarked,
                                 t.tag 
                             FROM linkdatamodel l 
                             LEFT JOIN entrycompactedtags t ON l.id = t.entry_id
@@ -99,6 +100,7 @@ object EntryListRepository {
                                 val age = it.getInt(it.getColumnIndexOrThrow("age"))
                                 val statusCode = it.getInt(it.getColumnIndexOrThrow("status_code"))
                                 val manualStatusCode = it.getInt(it.getColumnIndexOrThrow("manual_status_code"))
+                                val bookmarked = it.getInt(it.getColumnIndexOrThrow("bookmarked")) == 1
                                 val tagString = it.getString(it.getColumnIndexOrThrow("tag"))
                                 val tags = tagString?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
 
@@ -119,6 +121,7 @@ object EntryListRepository {
                                         age = age,
                                         status_code = statusCode,
                                         manual_status_code = manualStatusCode,
+                                        bookmarked = bookmarked,
                                         tags = tags
                                     )
                                 )
