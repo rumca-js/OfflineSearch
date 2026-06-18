@@ -17,6 +17,10 @@ Finding a website can be faster than opening a browser and typing a full URL. Of
 
 The app requires minimal permissions and does not rely on remote services for searching.
 
+# Databases
+
+The application is highly customizable and allows you to load different databases directly from a file. You can curate your own search indexes, share them, or swap between specialized databases depending on your current needs—all completely offline.
+
 # Open Source
 
 This project is open source and welcomes contributions, bug reports, and suggestions.
