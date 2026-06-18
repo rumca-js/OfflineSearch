@@ -1,0 +1,1 @@
+python3 scripts/update_gradle_checksum.py
