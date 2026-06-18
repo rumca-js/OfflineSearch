@@ -1,7 +1,6 @@
-A fast, lightweight Android application for searching a curated collection of:
- - popular websites and domains
- - YouTube channels
- - X channels
+Open-Source, privacy-first alternative to standard web search engines. Instead of querying a remote server every time you look for a website, this project allows you to query a curated, highly structured meta-database of valuable internet domains, communities, and personal web spaces directly on your local device.
+
+It is designed for tech enthusiasts, privacy advocates, and anyone annoyed by search engine malvertising, SEO spam, and content farms.
 
 # Features
 
