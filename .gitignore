@@ -49,3 +49,7 @@ app/build/
 /captures
 .externalNativeBuild
 .cxx
+
+# Fastlane keys
+fastlane/*key.json
+
